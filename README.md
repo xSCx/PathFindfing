@@ -2,5 +2,6 @@
 PathFinding
 
 A unity project
- A*, Dijkstra, Floyd and optimized A*.
+
+A*, Dijkstra, Floyd and optimized A*.
   
