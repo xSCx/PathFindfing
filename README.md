@@ -1,4 +1,4 @@
-# PathFindfing
+# PathFinding
 
 A unity project
 -----
