@@ -47,12 +47,4 @@ public class Grid : IComparable
         }
         return 0;
     }
-    //
-
-    //Dijkstra
-    //
-    
-    //Floyd
-    //
-
 }
