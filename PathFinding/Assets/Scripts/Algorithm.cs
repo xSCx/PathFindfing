@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,7 +8,8 @@ using UnityEngine.UI;
 public class Algorithm : MonoBehaviour
 {
     //算法类型
-    public int AlgorithmType = 1;
+    private int AlgorithmType = 1;
+    private int gettype;
     //参考物体预设体
     public GameObject reference;
     public static Algorithm instance;
@@ -51,6 +53,16 @@ public class Algorithm : MonoBehaviour
     //监听按钮
 	bool findingstart = false;
     public GameObject startbutton;
+	public GameObject Dijkstrabutton;
+	public GameObject Floydbutton;
+	public GameObject Astarbutton;
+	public GameObject AdAstarbutton;
+	public GameObject resetbutton;
+	//choice
+    public static int choice = 0;
+	private bool ran = false;
+	private bool recorded = false;
+
 
 
     //选定
@@ -60,11 +72,8 @@ public class Algorithm : MonoBehaviour
         openList = new ArrayList ();
 		closeList = new ArrayList ();
 		plane = GameObject.Find ("Plane").transform;
-		start = GameObject.Find ("Start").transform;
-		end = GameObject.Find ("End").transform;
-		//barriers = GameObject.Find ("Barriers").transform;
 		parentList = new Stack<string> ();
-		Timetext = GameObject.Find ("TimeResult").GetComponent<Text> ();
+        Timetext = GameObject.Find ("TimeResult").GetComponent<Text> ();
 		Pathtext = GameObject.Find ("Length").GetComponent<Text> ();
 		AType = GameObject.Find ("AlgorithmType").GetComponent<Text> ();
     }
@@ -121,8 +130,8 @@ public class Algorithm : MonoBehaviour
 	{
         //等待前面操作完成
         yield return new WaitForSeconds (0.1f);
-		//记录开始时间
-		DateTime tAstar1 = DateTime.Now;
+        //记录开始时间
+        DateTime tAstar1 = DateTime.Now;
         DateTime t_new1 = new DateTime();
 		//添加起始点
 		openList.Add (grids [startX, startY]);
@@ -131,29 +140,44 @@ public class Algorithm : MonoBehaviour
 		//循环遍历路径最小F的点
 		while (openList.Count > 0 && currentGrid.type != GridType.End) 
 		{
-			//获取此时最小F点
-			currentGrid = openList [0] as Grid;
-			//如果当前点就是目标
-			if (currentGrid.type == GridType.End) 
+            //获取此时最小F点
+            int compare = 999;
+            for (int i = 0; i < size;i++)
+			{
+                for (int j = 0; j < size;j++)
+                {
+					if(grids [i,j].f < compare)
+					{
+                        compare = grids [i, j].f;
+                        Debug.Log(compare);
+                    }
+                }
+            }
+            currentGrid = openList[0] as Grid;
+            //如果当前点就是目标
+            if (currentGrid.type == GridType.End) 
 			{
 				Debug.Log ("Find");
 				//生成结果
 				GenerateResult (currentGrid);
                 break;
             }
-			//上下左右，左上左下，右上右下，遍历
-			for (int i = -1; i <= 1; i++) 
-			{
-				for (int j = -1; j <= 1; j++) 
-				{
-					if (i != 0 || j != 0)
-					{
-						//计算坐标
-						int x = currentGrid.x + i;
-						int y = currentGrid.y + j;
-						//点亮访问
-						objs [x, y].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
-						= new Color (0.4f, 0.4f, 0.4f, 1);
+            //上下左右，左上左下，右上右下，遍历
+            for (int i = -1; i <= 1; i++)
+            {
+                for (int j = -1; j <= 1; j++)
+                {
+                    if (i != 0 || j != 0)
+                    {
+                        //计算坐标
+                        int x = currentGrid.x + i;
+                        int y = currentGrid.y + j;
+                        //点亮访问
+                        if (objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color == new Color(1.0f,1.0f,1.0f))
+						{
+							objs [x, y].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
+							= new Color (0.4f, 0.4f, 0.4f, 1);
+						}
 						//如果未超出所有格子范围，不是障碍物，不是重复点
 						if (x >= 0 && y >= 0 && x < size && y < size && grids [x, y].type != GridType.Barrier && !closeList.Contains (grids [x, y])) 
 						{
@@ -195,11 +219,14 @@ public class Algorithm : MonoBehaviour
 			}
 		}
 		//获取结束时间
-        t_new1= DateTime.Now;
-		ts = (t_new1 - tAstar1);
-        timelast = (int)ts.Milliseconds;
-		Pathlength = parentList.Count;
-        done = true;
+		if(recorded==false)
+		{
+			t_new1= DateTime.Now;
+			ts = (t_new1 - tAstar1);
+       	 	timelast = (int)ts.Milliseconds;
+        	Pathlength = parentList.Count;
+        	done = true;
+		}
     }
 
 	//Dijkstra
@@ -252,8 +279,11 @@ public class Algorithm : MonoBehaviour
                         if (x >= 0 && y >= 0 && x < size && y < size && grids[x, y].type != GridType.Barrier && !closeList.Contains(grids[x, y]))
                         {
 							//点亮访问
-							objs [x, y].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
-							= new Color (0.4f, 0.4f, 0.4f, 1);
+                        	if (objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color == new Color(1.0f,1.0f,1.0f))
+							{
+								objs [x, y].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
+								= new Color (0.4f, 0.4f, 0.4f, 1);
+							}
 							if(currentGrid.f+1 < grids[x,y].f)
 							{
                                 grids[x, y].f = currentGrid.f + 1;
@@ -266,13 +296,14 @@ public class Algorithm : MonoBehaviour
             }
         }
 		//获取结束时间
-        t_new1= DateTime.Now;
-		ts = (t_new1 - tAstar1);
-        timelast = (int)ts.Milliseconds;
-        //timelast = Math.Round(timelast / 10000, 2);
-		Pathlength = parentList.Count;
-        //Debug.Log(timelast + "/" + Pathlength);
-        done = true;
+		if(recorded==false)
+		{
+			t_new1= DateTime.Now;
+			ts = (t_new1 - tAstar1);
+       	 	timelast = (int)ts.Milliseconds;
+        	Pathlength = parentList.Count;
+        	done = true;
+		}
     }
 
 	//Floyd
@@ -288,8 +319,12 @@ public class Algorithm : MonoBehaviour
         {
             for (int j = 0; j < size;j++)
             {
-				objs [i, j].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
-							= new Color (0.4f, 0.4f, 0.4f, 1);
+				//点亮访问
+                if (objs[i, j].transform.GetChild(0).GetComponent<MeshRenderer>().material.color == new Color(1.0f,1.0f,1.0f))
+				{
+					objs [i, j].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
+					= new Color (0.4f, 0.4f, 0.4f, 1);
+				}
             }
         }
         for (int m = 0; m < size; m++)
@@ -411,14 +446,107 @@ public class Algorithm : MonoBehaviour
 			}
 		}
 		//获取结束时间
-        t_new1= DateTime.Now;
-		ts = (t_new1 - tAstar1);
-        timelast = (int)ts.Milliseconds;
-        //timelast = Math.Round(timelast / 10000, 2);
-		Pathlength = parentList.Count;
-        //Debug.Log(timelast + "/" + Pathlength);
-        done = true;
+		if(recorded==false)
+		{
+			t_new1= DateTime.Now;
+			ts = (t_new1 - tAstar1);
+       	 	timelast = (int)ts.Milliseconds;
+        	Pathlength = parentList.Count;
+        	done = true;
+		}
 	}
+
+	//AdvancedAstar
+	IEnumerator AdvancedAstar()
+	{
+		//等待前面操作完成
+        yield return new WaitForSeconds (0.1f);
+        //记录开始时间
+        DateTime tAstar1 = DateTime.Now;
+        DateTime t_new1 = new DateTime();
+		//添加起始点
+		openList.Add (grids [startX, startY]);
+		//声明当前格子变量，并赋初值
+		Grid currentGrid = openList [0] as Grid;
+		//循环遍历路径最小F的点
+		while (openList.Count > 0 && currentGrid.type != GridType.End) 
+		{
+            //获取此时最小F点
+            currentGrid = openList [0] as Grid;
+			//如果当前点就是目标
+			if (currentGrid.type == GridType.End) 
+			{
+				Debug.Log ("Find");
+				//生成结果
+				GenerateResult (currentGrid);
+                break;
+            }
+            //上下左右，左上左下，右上右下，遍历
+            for (int i = -1; i <= 1; i++)
+            {
+                for (int j = -1; j <= 1; j++)
+                {
+                    if (i != 0 || j != 0)
+                    {
+                        //计算坐标
+                        int x = currentGrid.x + i;
+                        int y = currentGrid.y + j;
+                        //点亮访问
+                        if (objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color == new Color(1.0f,1.0f,1.0f))
+						{
+							objs [x, y].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
+							= new Color (0.4f, 0.4f, 0.4f, 1);
+						}
+						//如果未超出所有格子范围，不是障碍物，不是重复点
+						if (x >= 0 && y >= 0 && x < size && y < size && grids [x, y].type != GridType.Barrier && !closeList.Contains (grids [x, y])) 
+						{
+							//计算G值
+							int g = currentGrid.g + (int)(Mathf.Sqrt ((Mathf.Abs (i) + Mathf.Abs (j))) * 10);;
+							//与原G值对照
+							if (grids [x, y].g == 0 || grids [x, y].g > g) 
+							{
+								//更新G值
+								grids [x, y].g = g;
+								//更新父格子
+								grids [x, y].parent = currentGrid;
+							}
+							
+							//计算H值
+							grids [x, y].h = Manhattan(x, y);
+							//计算F值
+							grids [x, y].f = grids [x, y].g + grids [x, y].h;
+							//如果未添加到开启列表
+							if (!openList.Contains(grids [x, y])) 
+							{
+								//添加
+								openList.Add(grids [x, y]);
+							}
+							//重新排序
+							openList.Sort();
+						}
+					}
+				}
+			}
+			//完成遍历添加该点到关闭列表
+			closeList.Add(currentGrid);
+			//从开启列表中移除
+			openList.Remove(currentGrid);
+			//如果开启列表空，未能找到路径
+			if (openList.Count == 0) 
+			{
+				Debug.Log ("Can not Find");
+			}
+		}
+		//获取结束时间
+		if(recorded==false)
+		{
+			t_new1= DateTime.Now;
+			ts = (t_new1 - tAstar1);
+       	 	timelast = (int)ts.Milliseconds;
+        	Pathlength = parentList.Count;
+        	done = true;
+		}
+    }
 	
 
 
@@ -456,58 +584,86 @@ public class Algorithm : MonoBehaviour
     void Start()
     {
         Init();
+		//监听按钮
         startbutton.GetComponent<Button>().onClick.AddListener(delegate ()
         {
-            findingstart = true;
+			if(choice>1)
+			{
+				findingstart = true;
+			}
         });
+		resetbutton.GetComponent<Button>().onClick.AddListener(delegate()
+		{
+            SceneManager.LoadScene(0);
+            choice = 0;
+            ran = false;
+
+        });
+        Astarbutton.GetComponent<Button>().onClick.AddListener(delegate ()
+        {
+            AlgorithmType = 1;
+        });
+		Dijkstrabutton.GetComponent<Button>().onClick.AddListener(delegate ()
+        {
+            AlgorithmType = 2;
+        });
+		Floydbutton.GetComponent<Button>().onClick.AddListener(delegate ()
+        {
+            AlgorithmType = 3;
+        });
+		AdAstarbutton.GetComponent<Button>().onClick.AddListener(delegate ()
+        {
+            AlgorithmType = 4;
+        });
+		//
     }
 
 	private void Update() 
 	{
-		if(done==true)
+        if(done==true)
 		{
 			//展示时间
         	Timetext.text = "时间：" + timelast + "ms";
         	Pathtext.text = "路径长度:" + Pathlength;
-		}
-
+            done = false;
+            recorded = false;
+        }
 		if(findingstart==true)
 		{
-			if(AlgorithmType==1)
+            gettype = AlgorithmType;
+			if(ran==false)
 			{
-				StartCoroutine(Astar());
-				StartCoroutine(ShowResult());
-            	AType.text = "标准Astar";
-        	}
-			if(AlgorithmType==2)
-			{	
-            	StartCoroutine(Dijkstra());
-            	StartCoroutine(ShowResult());
-            	AType.text = "Dijkstra";
-        	}
-			if(AlgorithmType==3)
-			{
-            	StartCoroutine(Floyd());
-            	StartCoroutine(ShowResult());
-				AType.text = "Floyd";
+				if(gettype==1)
+				{
+                    ran = true;
+                    StartCoroutine(Astar());
+					StartCoroutine(ShowResult());
+            		AType.text = "标准Astar";
+        		}
+				if(gettype==2)
+				{	
+					ran = true;
+            		StartCoroutine(Dijkstra());
+            		StartCoroutine(ShowResult());
+            		AType.text = "Dijkstra";
+        		}
+				if(gettype==3)
+				{
+					ran = true;
+            		StartCoroutine(Floyd());
+            		StartCoroutine(ShowResult());
+					AType.text = "Floyd";
+				}
+				if(gettype==4)
+				{
+					ran = true;
+                	StartCoroutine(AdvancedAstar());
+                	StartCoroutine(ShowResult());
+					AType.text = "改进Astar";
+				}	
 			}
-			if(AlgorithmType==4)
-			{
-				StartCoroutine(ShowResult());
-				AType.text = "改进Astar";
-			}	
 		}
 	}
-
-	
-	/*
-	//AdvancedAstar
-	IEnumerator AdvancedAstar()
-	{
-		//等待前面操作完成
-        yield return new WaitForSeconds (0.1f);
-	}
-	*/
 }
 
 

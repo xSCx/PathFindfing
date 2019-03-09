@@ -11,9 +11,9 @@ public class Reference : MonoBehaviour
 	public Material startMat;
 	public Material endMat;
 	public Material barrierMat;
-
-    //判断当前格子的类型
-	void OnTriggerEnter (Collider other)
+/*
+	//判断当前格子的类型
+    void OnTriggerEnter (Collider other)
 	{
 		if (other.name == "Start") 
 		{
@@ -36,10 +36,33 @@ public class Reference : MonoBehaviour
 			Algorithm.instance.grids [x, y].type = GridType.Barrier;
 		}
 	}
-
+ */
+    
 	void OnMouseDown ()
 	{
-		GetComponent<MeshRenderer> ().material = barrierMat;
-		Algorithm.instance.grids [x, y].type = GridType.Barrier;
+		if(Algorithm.choice<1)
+		{
+			GetComponent<MeshRenderer> ().material = startMat;
+			Algorithm.instance.grids [x, y].type = GridType.Start;
+			Algorithm.instance.openList.Add (Algorithm.instance.grids [x, y]);
+			Algorithm.instance.startX = x;
+			Algorithm.instance.startY = y;
+            Algorithm.choice += 1;
+        }
+		else if(Algorithm.choice<2)
+		{
+			GetComponent<MeshRenderer> ().material = endMat;
+			Algorithm.instance.grids [x, y].type = GridType.End;
+			Algorithm.instance.targetX = x;
+			Algorithm.instance.targetY = y;
+			Algorithm.choice += 1;
+		}
+		else
+		{
+			GetComponent<MeshRenderer> ().material = barrierMat;
+			Algorithm.instance.grids [x, y].type = GridType.Barrier;
+			Algorithm.choice += 1;
+		}
+		
 	}
 }

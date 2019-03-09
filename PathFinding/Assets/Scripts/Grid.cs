@@ -25,7 +25,8 @@ public class Grid : IComparable
 
     //Astar
     //属性
-    public int f,g,h;
+    public int f = 99;
+    public int g, h;
     //赋值
     public Grid(int x, int y)
     {
