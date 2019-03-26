@@ -26,12 +26,9 @@ public class Algorithm : MonoBehaviour
 	//格子数组对应的参考物（方块）对象
 	public GameObject[,] objs;
     //基础物体
-	private Transform plane;
-	private Transform start;
-	private Transform end;
-	private Transform barriers;
+    private Transform plane;
     //开启列表
-	public ArrayList openList;
+    public ArrayList openList;
 	//关闭列表
 	public ArrayList closeList;
 	//目标点坐标
@@ -51,6 +48,8 @@ public class Algorithm : MonoBehaviour
     private Text Timetext;
     private Text Pathtext;
     private Text AType;
+    private Text CountNum;
+    private int CountNumber = 0;
     //时间差值
     TimeSpan ts;
     double timelast;
@@ -81,6 +80,7 @@ public class Algorithm : MonoBehaviour
         Timetext = GameObject.Find ("TimeResult").GetComponent<Text> ();
 		Pathtext = GameObject.Find ("Length").GetComponent<Text> ();
 		AType = GameObject.Find ("AlgorithmType").GetComponent<Text> ();
+        CountNum = GameObject.Find ("Venty").GetComponent<Text> ();
     }
 
 	//初始化
@@ -195,9 +195,10 @@ public class Algorithm : MonoBehaviour
             				{
                 				objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color
                 				= new Color(0.4f, 0.4f, 0.4f, 1);
-            				}
+                                CountNumber += 1;
+                            }
                             //如果未超出所有格子范围，不是障碍物，不是重复点
-                            if (!closeList.Contains(grids[x, y]) && grids[x,y].type != GridType.Barrier && grids[x,y] != currentGrid)
+                            if (!closeList.Contains(grids[x, y]) && grids[x,y].type != GridType.Barrier && grids[x,y].type != GridType.Barrier1 && grids[x,y].type != GridType.Barrier2 && grids[x,y] != currentGrid)
                             {
                                 //计算H值
                                 grids[x, y].h = Manhattan(x, y);
@@ -295,6 +296,7 @@ public class Algorithm : MonoBehaviour
 							{
 								objs [x, y].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
 								= new Color (0.4f, 0.4f, 0.4f, 1);
+								CountNumber += 1;
 							}
 							if(currentGrid.f+1 < grids[x,y].f)
 							{
@@ -336,6 +338,7 @@ public class Algorithm : MonoBehaviour
 				{
 					objs [i, j].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
 					= new Color (0.4f, 0.4f, 0.4f, 1);
+					CountNumber += 1;
 				}
             }
         }
@@ -387,78 +390,91 @@ public class Algorithm : MonoBehaviour
             	}
         	}
 		}
-		//Debug.Log(allgrids[startX,startY,targetX,targetY]);
-
         //计算路径
         //添加起始点
-        openList.Add(grids[startX, startY]);
+        closeList.Add(grids[startX, startY]);
         //声明当前格子变量，并赋初值
         Grid currentGrid = openList [0] as Grid;
-		//循环遍历路径最小F的点
-		while (openList.Count > 0 && currentGrid.type != GridType.End) 
-		{
-			//获取此时最小F点
-			currentGrid = openList [0] as Grid;
+        Grid lastgrid = new Grid(startX, startY);
+        //获取此时最小F点
+        int compare = 999;
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                if (grids[i, j].f < compare)
+                {
+                    compare = (int)grids[i, j].f;
+                }
+            }
+        }
+        //循环遍历路径最小F的点
+        while (currentGrid.type != GridType.End)
+        {
+        	currentGrid = lastgrid;
 			//如果当前点就是目标
-			if (currentGrid.type == GridType.End) 
-			{
-				Debug.Log ("Find");
-				//生成结果
-				GenerateResult (currentGrid);
+        	if (currentGrid.type == GridType.End)
+        	{
+           	 	Debug.Log("Find");
+            	//生成结果
+                GenerateResult(currentGrid);
                 break;
             }
-			//上下左右，左上左下，右上右下，遍历
-			for (int i = -1; i <= 1; i++) 
-			{
-				for (int j = -1; j <= 1; j++) 
-				{
-					if (i != 0 || j != 0)
-					{
-						//计算坐标
-						int x = currentGrid.x + i;
-						int y = currentGrid.y + j;
-						//如果未超出所有格子范围，不是障碍物，不是重复点
-						if (x >= 0 && y >= 0 && x < size && y < size && grids [x, y].type != GridType.Barrier && !closeList.Contains (grids [x, y])) 
-						{
-							//计算G值
-							int g = currentGrid.g + (int)(Mathf.Sqrt ((Mathf.Abs (i) + Mathf.Abs (j))) * 10);
-							//与原G值对照
-							if (grids [x, y].g == 0 || grids [x, y].g > g) 
-							{
-								//更新G值
-								grids [x, y].g = g;
-								//更新父格子
-								grids [x, y].parent = currentGrid;
-							}
-							
-							//计算H值
-							grids [x, y].h = Manhattan(x, y);
-							//计算F值
-							grids [x, y].f = grids [x, y].g + grids [x, y].h;
-							//如果未添加到开启列表
-							if (!openList.Contains(grids [x, y])) 
-							{
-								//添加
-								openList.Add(grids [x, y]);
-							}
-							//重新排序
-							openList.Sort();
-						}
-					}
-				}
-			}
-			//完成遍历添加该点到关闭列表
-			closeList.Add(currentGrid);
-			//从开启列表中移除
-			openList.Remove(currentGrid);
+            //上下左右，左上左下，右上右下，遍历
+            for (int i = -1; i <= 1; i++)
+            {
+                for (int j = -1; j <= 1; j++)
+                {
+                    if (i != 0 || j != 0)
+                    {
+                        //计算坐标
+                        int x = currentGrid.x + i;
+                        int y = currentGrid.y + j;
+                        if (x >= 0 && y >= 0 && x < size && y < size)
+                        {
+							//点亮访问
+            				if (objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color == new Color(1.0f, 1.0f, 1.0f))
+            				{
+                				objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color
+                				= new Color(0.4f, 0.4f, 0.4f, 1);
+                                CountNumber += 1;
+                            }
+                            //如果未超出所有格子范围，不是障碍物，不是重复点
+                            if (!closeList.Contains(grids[x, y]) && grids[x,y].type != GridType.Barrier && grids[x,y].type != GridType.Barrier1 && grids[x,y].type != GridType.Barrier2 && grids[x,y] != currentGrid)
+                            {
+                                //计算H值
+                                grids[x, y].h = Manhattan(x, y);
+                                //计算F值
+                                grids[x, y].f = grids[x, y].g + grids[x, y].h;
+                                //如果未添加到开启列表
+                                if (!openList.Contains(grids[x, y]))
+                                {
+                                    //添加
+                                    openList.Add(grids[x, y]);
+                                }
+                                //重新排序
+                                openList.Sort();
+                            }
+                        }
+                    }
+                }
+            }
 			//如果开启列表空，未能找到路径
-			if (openList.Count == 0) 
-			{
-				Debug.Log ("Can not Find");
-			}
-		}
-		//获取结束时间
-		if(recorded==false)
+            if (openList.Count == 0)
+            {
+                Debug.Log("Can not Find");
+                break;
+            }
+            lastgrid = openList[0] as Grid;
+            lastgrid.parent = currentGrid;
+            //完成遍历添加该点到关闭列表
+            closeList.Add(lastgrid);
+            //从开启列表中移除
+            openList.Remove(lastgrid);
+        }
+
+        //获取结束时间
+        if(recorded==false)
 		{
 			t_new1= DateTime.Now;
 			ts = (t_new1 - tAstar1);
@@ -511,6 +527,7 @@ public class Algorithm : MonoBehaviour
                             {
                                 objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color
                                 = new Color(0.4f, 0.4f, 0.4f, 1);
+								CountNumber += 1;
                             }
                             //如果未超出所有格子范围，不是障碍物，不是重复点
                             if (!closeList.Contains(grids[x, y]))
@@ -626,6 +643,7 @@ public class Algorithm : MonoBehaviour
 		{
             SceneManager.LoadScene(0);
             choice = 0;
+            CountNumber = 0;
             ran = false;
 
         });
@@ -655,6 +673,7 @@ public class Algorithm : MonoBehaviour
 			//展示时间
         	Timetext.text = "时间：" + timelast + "ms";
         	Pathtext.text = "路径长度:" + Pathlength;
+            CountNum.text = "遍历数目："+ CountNumber;
             done = false;
             recorded = false;
         }
