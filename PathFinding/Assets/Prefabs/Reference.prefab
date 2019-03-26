@@ -138,9 +138,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   x: 0
   y: 0
+  normalMat: {fileID: 2100000, guid: 8c29c36b3c80f4e9a9e71d855664877c, type: 2}
   startMat: {fileID: 2100000, guid: e9bbcd8198f6249a3a004bb9df5b0e11, type: 2}
   endMat: {fileID: 2100000, guid: 267133080f6be44abb13ea935c86a0ad, type: 2}
   barrierMat: {fileID: 2100000, guid: 9554e3286d0e741b686848896db1bfe5, type: 2}
+  barrierMat1: {fileID: 2100000, guid: 8cd74c25013974d4e84dcfd41b1cc0cf, type: 2}
+  barrierMat2: {fileID: 2100000, guid: 822328ffcf8f5444d97eeba6e840bcfd, type: 2}
 --- !u!54 &4795748518383629017
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -9,7 +9,9 @@ public enum GridType
     Normal,
     Start,
     End,
-    Barrier
+    Barrier,
+    Barrier1,
+    Barrier2
 }
 
 //实现格子类
@@ -25,8 +27,9 @@ public class Grid : IComparable
 
     //Astar
     //属性
-    public int f = 99;
-    public int g, h;
+    public float f = 99;
+    public int g = 1;
+    public int h = 98;
     //赋值
     public Grid(int x, int y)
     {

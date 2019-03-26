@@ -7,6 +7,11 @@ using UnityEngine.UI;
 
 public class Algorithm : MonoBehaviour
 {
+    //调参
+    public float omega = 0.05f;
+    public int g1 = 10;
+    public int g2 = 20;
+    public int g3 = 30;
     //算法类型
     private int AlgorithmType = 1;
     private int gettype;
@@ -113,8 +118,9 @@ public class Algorithm : MonoBehaviour
 		{
 			//添加到父对象栈（即结果栈）
 			parentList.Push (currentGrid.x + "|" + currentGrid.y);
-			//递归获取
-			GenerateResult (currentGrid.parent);
+            //Debug.Log(currentGrid.x + "," + currentGrid.y);
+            //递归获取
+            GenerateResult (currentGrid.parent);
 		}
 	}
 
@@ -124,6 +130,16 @@ public class Algorithm : MonoBehaviour
 		return (int)(Mathf.Abs (targetX - x) + Mathf.Abs (targetY - y)) * 10;
 	}
 
+	//改进启发函数
+	int CosH(int startx, int starty, int m, int n, int endx, int endy)
+	{
+        int coss;
+        float cos
+        = ((endx - startx) * (m - startx) + (endy - starty) * (n - starty)) 
+		/ (Mathf.Sqrt((startx - m) * (startx - m) + (starty - n) * (starty - n))) * Mathf.Sqrt((startx - endx) * (startx - endx) + (starty - endy) * (starty - endy));
+        coss = (int)Mathf.Round(cos);
+        return coss;
+    }
 
 	//A*
 	IEnumerator Astar ()
@@ -134,32 +150,32 @@ public class Algorithm : MonoBehaviour
         DateTime tAstar1 = DateTime.Now;
         DateTime t_new1 = new DateTime();
 		//添加起始点
-		openList.Add (grids [startX, startY]);
-		//声明当前格子变量，并赋初值
-		Grid currentGrid = openList [0] as Grid;
-		//循环遍历路径最小F的点
-		while (openList.Count > 0 && currentGrid.type != GridType.End) 
-		{
-            //获取此时最小F点
-            int compare = 999;
-            for (int i = 0; i < size;i++)
-			{
-                for (int j = 0; j < size;j++)
+        closeList.Add(grids[startX, startY]);
+        //声明当前格子变量，并赋初值
+        Grid currentGrid = openList [0] as Grid;
+        Grid lastgrid = new Grid(startX, startY);
+        //获取此时最小F点
+        int compare = 999;
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                if (grids[i, j].f < compare)
                 {
-					if(grids [i,j].f < compare)
-					{
-                        compare = grids [i, j].f;
-                        Debug.Log(compare);
-                    }
+                    compare = (int)grids[i, j].f;
                 }
             }
-            currentGrid = openList[0] as Grid;
-            //如果当前点就是目标
-            if (currentGrid.type == GridType.End) 
-			{
-				Debug.Log ("Find");
-				//生成结果
-				GenerateResult (currentGrid);
+        }
+        //循环遍历路径最小F的点
+        while (currentGrid.type != GridType.End)
+        {
+        	currentGrid = lastgrid;
+			//如果当前点就是目标
+        	if (currentGrid.type == GridType.End)
+        	{
+           	 	Debug.Log("Find");
+            	//生成结果
+                GenerateResult(currentGrid);
                 break;
             }
             //上下左右，左上左下，右上右下，遍历
@@ -172,54 +188,50 @@ public class Algorithm : MonoBehaviour
                         //计算坐标
                         int x = currentGrid.x + i;
                         int y = currentGrid.y + j;
-                        //点亮访问
-                        if (objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color == new Color(1.0f,1.0f,1.0f))
-						{
-							objs [x, y].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
-							= new Color (0.4f, 0.4f, 0.4f, 1);
-						}
-						//如果未超出所有格子范围，不是障碍物，不是重复点
-						if (x >= 0 && y >= 0 && x < size && y < size && grids [x, y].type != GridType.Barrier && !closeList.Contains (grids [x, y])) 
-						{
-							//计算G值
-							int g = currentGrid.g + (int)(Mathf.Sqrt ((Mathf.Abs (i) + Mathf.Abs (j))) * 10);;
-							//与原G值对照
-							if (grids [x, y].g == 0 || grids [x, y].g > g) 
-							{
-								//更新G值
-								grids [x, y].g = g;
-								//更新父格子
-								grids [x, y].parent = currentGrid;
-							}
-							
-							//计算H值
-							grids [x, y].h = Manhattan(x, y);
-							//计算F值
-							grids [x, y].f = grids [x, y].g + grids [x, y].h;
-							//如果未添加到开启列表
-							if (!openList.Contains(grids [x, y])) 
-							{
-								//添加
-								openList.Add(grids [x, y]);
-							}
-							//重新排序
-							openList.Sort();
-						}
-					}
-				}
-			}
-			//完成遍历添加该点到关闭列表
-			closeList.Add(currentGrid);
-			//从开启列表中移除
-			openList.Remove(currentGrid);
+                        if (x >= 0 && y >= 0 && x < size && y < size)
+                        {
+							//点亮访问
+            				if (objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color == new Color(1.0f, 1.0f, 1.0f))
+            				{
+                				objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color
+                				= new Color(0.4f, 0.4f, 0.4f, 1);
+            				}
+                            //如果未超出所有格子范围，不是障碍物，不是重复点
+                            if (!closeList.Contains(grids[x, y]) && grids[x,y].type != GridType.Barrier && grids[x,y] != currentGrid)
+                            {
+                                //计算H值
+                                grids[x, y].h = Manhattan(x, y);
+                                //计算F值
+                                grids[x, y].f = grids[x, y].g + grids[x, y].h;
+                                //如果未添加到开启列表
+                                if (!openList.Contains(grids[x, y]))
+                                {
+                                    //添加
+                                    openList.Add(grids[x, y]);
+                                }
+                                //重新排序
+                                openList.Sort();
+                            }
+                        }
+                    }
+                }
+            }
 			//如果开启列表空，未能找到路径
-			if (openList.Count == 0) 
-			{
-				Debug.Log ("Can not Find");
-			}
-		}
-		//获取结束时间
-		if(recorded==false)
+            if (openList.Count == 0)
+            {
+                Debug.Log("Can not Find");
+                break;
+            }
+            lastgrid = openList[0] as Grid;
+            lastgrid.parent = currentGrid;
+            //完成遍历添加该点到关闭列表
+            closeList.Add(lastgrid);
+            //从开启列表中移除
+            openList.Remove(lastgrid);
+        }
+
+        //获取结束时间
+        if(recorded==false)
 		{
 			t_new1= DateTime.Now;
 			ts = (t_new1 - tAstar1);
@@ -409,7 +421,7 @@ public class Algorithm : MonoBehaviour
 						if (x >= 0 && y >= 0 && x < size && y < size && grids [x, y].type != GridType.Barrier && !closeList.Contains (grids [x, y])) 
 						{
 							//计算G值
-							int g = currentGrid.g + (int)(Mathf.Sqrt ((Mathf.Abs (i) + Mathf.Abs (j))) * 10);;
+							int g = currentGrid.g + (int)(Mathf.Sqrt ((Mathf.Abs (i) + Mathf.Abs (j))) * 10);
 							//与原G值对照
 							if (grids [x, y].g == 0 || grids [x, y].g > g) 
 							{
@@ -465,20 +477,21 @@ public class Algorithm : MonoBehaviour
         DateTime tAstar1 = DateTime.Now;
         DateTime t_new1 = new DateTime();
 		//添加起始点
-		openList.Add (grids [startX, startY]);
-		//声明当前格子变量，并赋初值
-		Grid currentGrid = openList [0] as Grid;
-		//循环遍历路径最小F的点
-		while (openList.Count > 0 && currentGrid.type != GridType.End) 
-		{
-            //获取此时最小F点
-            currentGrid = openList [0] as Grid;
+        closeList.Add(grids[startX, startY]);
+        //声明当前格子变量，并赋初值
+        Grid currentGrid = openList [0] as Grid;
+        Grid lastgrid = new Grid(startX, startY);
+        
+        //循环遍历路径最小F的点
+        while (openList.Count > 0 && currentGrid.type != GridType.End)
+        {
+        	currentGrid = lastgrid;
 			//如果当前点就是目标
-			if (currentGrid.type == GridType.End) 
-			{
-				Debug.Log ("Find");
-				//生成结果
-				GenerateResult (currentGrid);
+        	if (currentGrid.type == GridType.End)
+        	{
+           	 	Debug.Log("Find");
+            	//生成结果
+                GenerateResult(currentGrid);
                 break;
             }
             //上下左右，左上左下，右上右下，遍历
@@ -491,54 +504,71 @@ public class Algorithm : MonoBehaviour
                         //计算坐标
                         int x = currentGrid.x + i;
                         int y = currentGrid.y + j;
-                        //点亮访问
-                        if (objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color == new Color(1.0f,1.0f,1.0f))
-						{
-							objs [x, y].transform.GetChild (0).GetComponent<MeshRenderer> ().material.color
-							= new Color (0.4f, 0.4f, 0.4f, 1);
-						}
-						//如果未超出所有格子范围，不是障碍物，不是重复点
-						if (x >= 0 && y >= 0 && x < size && y < size && grids [x, y].type != GridType.Barrier && !closeList.Contains (grids [x, y])) 
-						{
-							//计算G值
-							int g = currentGrid.g + (int)(Mathf.Sqrt ((Mathf.Abs (i) + Mathf.Abs (j))) * 10);;
-							//与原G值对照
-							if (grids [x, y].g == 0 || grids [x, y].g > g) 
-							{
-								//更新G值
-								grids [x, y].g = g;
-								//更新父格子
-								grids [x, y].parent = currentGrid;
-							}
-							
-							//计算H值
-							grids [x, y].h = Manhattan(x, y);
-							//计算F值
-							grids [x, y].f = grids [x, y].g + grids [x, y].h;
-							//如果未添加到开启列表
-							if (!openList.Contains(grids [x, y])) 
-							{
-								//添加
-								openList.Add(grids [x, y]);
-							}
-							//重新排序
-							openList.Sort();
-						}
-					}
-				}
-			}
-			//完成遍历添加该点到关闭列表
-			closeList.Add(currentGrid);
-			//从开启列表中移除
-			openList.Remove(currentGrid);
-			//如果开启列表空，未能找到路径
-			if (openList.Count == 0) 
-			{
-				Debug.Log ("Can not Find");
-			}
-		}
-		//获取结束时间
-		if(recorded==false)
+                        if (x >= 0 && y >= 0 && x < size && y < size)
+                        {
+                            //点亮访问
+                            if (objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color == new Color(1.0f, 1.0f, 1.0f))
+                            {
+                                objs[x, y].transform.GetChild(0).GetComponent<MeshRenderer>().material.color
+                                = new Color(0.4f, 0.4f, 0.4f, 1);
+                            }
+                            //如果未超出所有格子范围，不是障碍物，不是重复点
+                            if (!closeList.Contains(grids[x, y]))
+                            {
+                                //计算H值
+                                grids[x, y].h = Manhattan(x, y);
+                                int hcos = CosH(startX, startY, x, y, targetX, targetY);
+								//计算G值
+								int ggg = currentGrid.g + (int)(Mathf.Sqrt ((Mathf.Abs (i) + Mathf.Abs (j))) * 10);
+								if(currentGrid.type==GridType.Barrier)
+								{
+                                    ggg += g1;
+                                }
+								else if(currentGrid.type==GridType.Barrier1)
+								{
+                                    ggg += g2;
+                                }
+								else if(currentGrid.type==GridType.Barrier2)
+								{
+                                    ggg += g3;
+                                }
+								//与原G值对照
+								if (grids [x, y].g == 1 || grids [x, y].g > ggg) 
+								{
+									//更新G值
+									grids [x, y].g = ggg;
+									grids [x, y].parent = currentGrid;
+								}	
+                                //计算F值
+                                grids[x, y].f = grids[x, y].g + grids[x, y].h - omega*hcos;
+                                //如果未添加到开启列表
+                                if (!openList.Contains(grids[x, y]))
+                                {
+                                    //添加
+                                    openList.Add(grids[x, y]);
+                                }
+                                //重新排序
+                                openList.Sort();
+                            }
+                        }
+                    }
+                }
+            }
+            lastgrid = openList[0] as Grid;
+            //lastgrid.parent = currentGrid;
+            //完成遍历添加该点到关闭列表
+            closeList.Add(lastgrid);
+            //从开启列表中移除
+            openList.Remove(lastgrid);
+            //如果开启列表空，未能找到路径
+            if (openList.Count == 0)
+            {
+                Debug.Log("Can not Find");
+            }
+        }
+
+        //获取结束时间
+        if(recorded==false)
 		{
 			t_new1= DateTime.Now;
 			ts = (t_new1 - tAstar1);
@@ -665,7 +695,3 @@ public class Algorithm : MonoBehaviour
 		}
 	}
 }
-
-
-
-	
