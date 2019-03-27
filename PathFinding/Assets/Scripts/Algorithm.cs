@@ -590,7 +590,7 @@ public class Algorithm : MonoBehaviour
 			t_new1= DateTime.Now;
 			ts = (t_new1 - tAstar1);
        	 	timelast = (int)ts.Milliseconds;
-        	Pathlength = parentList.Count;
+        	Pathlength = parentList.Count+1;
         	done = true;
 		}
     }
